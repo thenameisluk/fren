@@ -13,6 +13,12 @@ extern "C" void externUwU() {
     std::cout << "UwU" << std::endl;
 }
 
+//can be platform dependent
+extern "C" uint32_t getColor(uint8_t r,uint8_t g,uint8_t b){
+
+    return (r<<16) | (g<<8) | b;
+}
+
 extern "C" Surface* getWindow(uint32_t width,uint32_t height,const char* name){
     Surface* out = new Surface;
     out->height = height;
@@ -68,17 +74,20 @@ extern "C" Surface* getWindow(uint32_t width,uint32_t height,const char* name){
     return out;
 }
 
+//after running this command the pointer can't be used anymore
 extern "C" void destroyWindow(Surface* window){
     XDestroyWindow(window->display, window->window);
 
     XDestroyImage(window->image);
     
     XCloseDisplay(window->display);
+
+    delete [] window->fb;
+
+    window->fb = nullptr;
+
+    delete window;
 }
-
-// fb getFramebuffer(window){
-
-// }
 
 extern "C" void drawFrame(Surface* window){
     GC gc = XCreateGC(window->display, window->window, 0, nullptr);
@@ -100,8 +109,8 @@ enum eventType: uint8_t{
 };
 
 struct eventPos{
-    uint32_t x;
-    uint32_t y;
+    int32_t x;
+    int32_t y;
 };
 union eventDate{
     char key;
@@ -178,11 +187,11 @@ extern "C" char getEventKey(Event* event){
     return event->data.key;
 }
 
-extern "C" uint32_t getEventX(Event* event){
+extern "C" int32_t getEventX(Event* event){
     return event->data.pos.x;
 }
 
-extern "C" uint32_t getEventY(Event* event){
+extern "C" int32_t getEventY(Event* event){
     return event->data.pos.y;
 }
 

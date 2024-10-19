@@ -1,9 +1,10 @@
-#pragma once
-
 #include <stdint.h>
-#include <functional>
+#include <iostream>
+// #include <functional>
 #include <cmath>
 #include <algorithm>
+
+#include "../include/window.hpp"
 
 
 #define swp(a, b)   \
@@ -13,14 +14,10 @@
         b = t;      \
     }
 
-#ifdef _win32 //windows is dumb
 #define max(a,b){((a) > (b)) ? (a) : (b)}
 #define min(a,b){((a) < (b)) ? (a) : (b)}
-#endif
 
 // ascii
-
-#pragma once
 inline uint64_t characters[] = {
     // https://github.com/dhepper/font8x8/blob/master/font8x8_basic.h
     0x0000000000000000, // U+0020 (space)
@@ -121,188 +118,132 @@ inline uint64_t characters[] = {
     0x0000000000000000  // U+007F
 };
 
-namespace dsl
-{
-    struct color
-    {
-        uint8_t b;
-        uint8_t g;
-        uint8_t r;
-        uint8_t a;
-    };
-
-    static const color nullColor = {0};
-
-    inline constexpr color argb(uint8_t r, uint8_t g, uint8_t b, uint8_t a)
-    {
-        return {b, g, r, a};
-    };
-    inline constexpr color rgb(uint8_t r, uint8_t g, uint8_t b) { return argb(r, g, b, 255); };
-
-    class ctx
-    {
-        const uint32_t height;
-        const uint32_t width;
-        color *img;
-        constexpr bool isInside(uint32_t x, uint32_t y); // not safety checks
-    public:
-        ctx(int width, int height);
-        ctx(int width, int height, color *img);
-        ctx(ctx &cp);
-        ~ctx();
-        // get data
-        color *getData();
-
-        uint32_t getHeight();
-        uint32_t getWidth();
-        // entier screen
-        void fill(color c);
-        // points
-        void drawPoint(int32_t x, int32_t y, color c);
-        // rectangles
-        void fillRect(int32_t x, int32_t y, uint32_t w, uint32_t h, color c);
-        void drawRect(int32_t x, int32_t y, uint32_t w, uint32_t h, color c);
-        // circle
-        void drawCircle(int32_t x, int32_t y, uint32_t radius, color c);
-        void fillCircle(int32_t x, int32_t y, uint32_t radius, color c);
-        // lines
-        void drawLine(int32_t x1, int32_t y1, int32_t x2, int32_t y2, color c);
-        void drawLineLeftRight(int32_t x, int32_t y, int32_t l, color c);
-        void drawLineUpDown(int32_t x, int32_t y, int32_t l, color c);
-        // other ctx
-        void drawCtx(int32_t x, int32_t y, ctx &context, uint8_t scale = 1);
-        // triangle
-        void drawTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, color c);
-        void fillTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, color c);
-        // symbols
-        // sprites
-        // letters
-        void drawLetter(char ch, int32_t x, int32_t y, color c, int32_t scale = 1);
-        void print(const char *text, int32_t x, int32_t y, color c, uint32_t scale = 1);
-        void print(int32_t number, int32_t x, int32_t y, color c, uint32_t scale = 1);
-
-    private:
-        // helpfull
-        void mirrorDrawPoint(int32_t x, int32_t y, uint32_t ox, uint32_t oy, color c);
-    };
-}
-
 // ctx
 
-inline constexpr bool dsl::ctx::isInside(uint32_t x, uint32_t y)
+extern "C" void drawLineLeftRight(Surface* ctx,int32_t x, int32_t y, int32_t l, uint32_t c)
 {
-    return (x < width && y < height);
-}
+    if(y<0||y>=ctx->height)
+        return;
 
-inline dsl::ctx::ctx(int width, int height) : height(height), width(width)
-{
-    img = new color[height * width];
-    fill(nullColor);
-}
+    l = min(l,(int32_t)ctx->width-x-1);
 
-inline dsl::ctx::ctx(ctx &cp) : height(cp.height), width(cp.width)
-{
-    img = new color[height * width];
-    for (int32_t i = 0; i < width * height; i++)
+    uint32_t point = x + y * ctx->width;
+
+    for (uint32_t i = 0; i < l; i++)
     {
-        img[i] = cp.img[i];
+        
+        ctx->fb[point] = c;
+        point += 1;
     }
 }
 
-inline dsl::ctx::~ctx()
+extern "C" void drawLineUpDown(Surface* ctx,int32_t x, int32_t y, int32_t l, uint32_t c)
 {
-    delete[] img;
+    if(x<0||x>=ctx->width)
+        return;
+
+    l = min(l,(int32_t)ctx->height-y-1);
+
+    uint32_t point = x + y * ctx->width;
+
+    for (uint32_t i = 0; i < l; i++)
+    {
+        
+        ctx->fb[point] = c;
+        point += ctx->width;
+    }
 }
 
-inline dsl::color *dsl::ctx::getData()
+extern "C" void fillRect(Surface* ctx,int32_t x, int32_t y, uint32_t w, uint32_t h, uint32_t c)
 {
-    return img;
-}
-
-inline uint32_t dsl::ctx::getHeight()
-{
-    return height;
-}
-
-inline uint32_t dsl::ctx::getWidth()
-{
-    return width;
-}
-
-inline void dsl::ctx::fillRect(int32_t x, int32_t y, uint32_t w, uint32_t h, color c)
-{
-    x = std::max(0, x);
-    y = std::max(0, y);
-    w = std::min(width, w);
-    h = std::min(height, h);
+    x = max(0, x);
+    y = max(0, y);
+    w = min(ctx->width, w);
+    h = min(ctx->height, h);
 
     for (int32_t ix = 0; ix < (int32_t)w; ix++)
     {
         for (int32_t iy = 0; iy < (int32_t)h; iy++)
         {
-            img[(x + ix) + width * (y + iy)] = c; // to -optimize?
+            ctx->fb[(x + ix) + ctx->width * (y + iy)] = c; // to -optimize?
         }
     }
 };
 
-inline void dsl::ctx::drawRect(int32_t x, int32_t y, uint32_t w, uint32_t h, color c) // to-optimize
+extern "C" void drawRect(Surface* ctx,int32_t x, int32_t y, uint32_t w, uint32_t h, uint32_t c) // to-optimize
 {
-    for (int32_t i = 0; i < w; i++)
-    {
-        drawPoint(x + i, y, c);
-        drawPoint(x + i, y + h - 1, c);
-    }
-    for (int32_t i = 0; i < h; i++)
-    {
-        drawPoint(x, y + i, c);
-        drawPoint(x + w - 1, y + i, c);
-    }
+    drawLineUpDown(ctx,x,y,h,c);
+    drawLineUpDown(ctx,x,y + h - 1,h,c);
+    drawLineLeftRight(ctx,x,y,w,c);
+    drawLineLeftRight(ctx,x + w - 1,y,w,c);
 };
 
-inline void dsl::ctx::fill(color c)
+extern "C" void fill(Surface* ctx,uint32_t c)
 {
-    for (uint32_t i = 0; (int32_t)i < (int32_t)height * (int32_t)width; i++)
+    for (uint32_t i = 0; (int32_t)i < (int32_t)ctx->height * (int32_t)ctx->width; i++)
     {
-        img[i] = c;
+        ctx->fb[i] = c;
     }
 };
 
-inline void dsl::ctx::drawPoint(int32_t x, int32_t y, color c)
-{
-    if (x >= width || x < 0 || y >= height || y < 0)
-        return;
-    img[x + width * y] = c;
-};
-
-inline void dsl::ctx::drawLine(int32_t x1, int32_t y1, int32_t x2, int32_t y2, color c)
+//Important
+//to-optimize/fix (cut the lines outside)
+extern "C" void drawLine(Surface* ctx,int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t c)
 {
     int32_t dx = x2 - x1;
     int32_t dy = y2 - y1;
+
+    uint32_t w = ctx->width;
+    uint32_t h = ctx->height;
+    uint32_t* fb = ctx->fb;
+
     if (abs(dx) < abs(dy))
     {
+        // od ^
+        // </* *\>
         if (x1 > x2)
         {
             swp(x1, x2);
             swp(y1, y2);
         }
+
         dx = x2 - x1;
         dy = y2 - y1;
+        std::cout << "y" << dx << ":" << dy << std::endl;
         if (dy > 0)
         {
+
             for (int32_t i = 0; i < dy; i++)
             {
                 float p = ((float)i / (float)dy) * (float)dx;
-                drawPoint(x1 + p, y1 + i, c);
+
+                uint32_t x = x1 + p;
+                uint32_t y = y1 + i;
+                //std::cout << "y" << x << ":" << y << std::endl;
+
+                if(x>=w||y>=h)//since it's unsgned, negative values get super hight
+                    continue;
+                
+                fb[x + y*w] = c;
             }
         }
-        else
-        {
+        else if(dy < 0){
             dy = abs(dy);
             for (int32_t i = 0; i < dy; i++)
             {
                 float p = ((float)i / (float)dy) * (float)dx;
-                drawPoint(x1 + p, y1 - i, c);
+
+                uint32_t x = x1 + p;
+                uint32_t y = y1 - i;
+                //std::cout << "ay" << x << ":" << y << std::endl;
+
+                if(x>=w||y>=h)//since it's unsgned, negative values get super hight
+                    continue;
+                
+                fb[x + y*w] = c;
             }
+        }else{
+            drawLineUpDown(ctx,x1,x2,dx,c);
         }
     }
     else
@@ -319,7 +260,15 @@ inline void dsl::ctx::drawLine(int32_t x1, int32_t y1, int32_t x2, int32_t y2, c
             for (int32_t i = 0; i < dx; i++)
             {
                 float p = ((float)i / (float)dx) * (float)dy;
-                drawPoint(x1 + i, y1 + p, c);
+                
+                uint32_t x = x1 + i;
+                uint32_t y = y1 + p;
+                //std::cout << "x" << x << ":" << y << std::endl;
+
+                if(x>=w||y>=h)//since it's unsgned, negative values get super hight
+                    continue;
+                
+                fb[x + y*w] = c;
             }
         }
         else
@@ -328,93 +277,86 @@ inline void dsl::ctx::drawLine(int32_t x1, int32_t y1, int32_t x2, int32_t y2, c
             for (int32_t i = 0; i < dx; i++)
             {
                 float p = ((float)i / (float)dx) * (float)dy;
-                drawPoint(x1 - i, y1 + p, c);
+
+                uint32_t x = x1 - i;
+                uint32_t y = y1 + p;
+                //std::cout << dx << ":" << dy << ":" << i << std::endl;
+                //std::cout << "ax" << x << ":" << y << std::endl;
+
+                if(x>=w||y>=h)//since it's unsgned, negative values get super hight
+                    continue;
+                
+                fb[x + y*w] = c;
             }
         }
     }
 };
 
-inline void dsl::ctx::drawTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, color c)
+extern "C" void drawTriangle(Surface* ctx,int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, uint32_t c)
 {
-    drawLine(x1, y1, x2, y2, c);
-    drawLine(x2, y2, x3, y3, c);
-    drawLine(x3, y3, x1, y1, c);
+    drawLine(ctx,x1, y1, x2, y2, c);
+    drawLine(ctx,x2, y2, x3, y3, c);
+    drawLine(ctx,x3, y3, x1, y1, c);
 };
 
-inline void dsl::ctx::drawCircle(int32_t x, int32_t y, uint32_t radius, color c)
-{
-    float len = 0;
-    for (int32_t i = 0; i < radius; i++)
-    {
-        len = sqrt((float(radius) * float(radius)) - (float(i) * float(i)));
-        mirrorDrawPoint(x, y, i, len, c);
-        mirrorDrawPoint(x, y, len, i, c);
-        if (i == len)
-            return;
-    }
-};
+// void drawCircle(int32_t x, int32_t y, uint32_t radius, uint32_t c)
+// {
+//     float len = 0;
+//     for (int32_t i = 0; i < radius; i++)
+//     {
+//         len = sqrt((float(radius) * float(radius)) - (float(i) * float(i)));
+//         mirrorDrawPoint(x, y, i, len, c);
+//         mirrorDrawPoint(x, y, len, i, c);
+//         if (i == len)
+//             return;
+//     }
+// };
 
-inline void dsl::ctx::mirrorDrawPoint(int32_t x, int32_t y, uint32_t ox, uint32_t oy, color c)
-{
-    drawPoint(x + ox, y + oy, c);
-    drawPoint(x + ox, y - oy, c);
-    drawPoint(x - ox, y - oy, c);
-    drawPoint(x - ox, y + oy, c);
-}
+// void mirrorDrawPoint(int32_t x, int32_t y, uint32_t ox, uint32_t oy, uint32_t c)
+// {
+//     drawPoint(x + ox, y + oy, c);
+//     drawPoint(x + ox, y - oy, c);
+//     drawPoint(x - ox, y - oy, c);
+//     drawPoint(x - ox, y + oy, c);
+// }
 
-inline void dsl::ctx::fillCircle(int32_t x, int32_t y, uint32_t radius, color c)
-{
-    drawPoint(x, y, c);
+// void fillCircle(int32_t x, int32_t y, uint32_t radius, uint32_t c)
+// {
+//     drawPoint(x, y, c);
 
-    float len = 0;
-    for (int32_t i = 1; i < radius; i++)
-    {
-        len = sqrt((float(radius) * float(radius)) - (float(i) * float(i)));
-        for (int32_t j = 1; j < len; j++)
-        {
-            if (i == j)
-                break;
+//     float len = 0;
+//     for (int32_t i = 1; i < radius; i++)
+//     {
+//         len = sqrt((float(radius) * float(radius)) - (float(i) * float(i)));
+//         for (int32_t j = 1; j < len; j++)
+//         {
+//             if (i == j)
+//                 break;
 
-            mirrorDrawPoint(x, y, i, j, c);
-            mirrorDrawPoint(x, y, j, i, c);
-        }
-        if (i == len)
-            break;
-    }
+//             mirrorDrawPoint(x, y, i, j, c);
+//             mirrorDrawPoint(x, y, j, i, c);
+//         }
+//         if (i == len)
+//             break;
+//     }
 
-    float skos = sqrt((float(radius) * float(radius)) / 2);
+//     float skos = sqrt((float(radius) * float(radius)) / 2);
 
-    for (int32_t i = 1; i < skos; i++)
-    { // skos
-        mirrorDrawPoint(x, y, i, i, c);
-    }
+//     for (int32_t i = 1; i < skos; i++)
+//     { // skos
+//         mirrorDrawPoint(x, y, i, i, c);
+//     }
 
-    for (int32_t i = 1; i < radius; i++)
-    { // pion/poziom
-        drawPoint(x + i, y, c);
-        drawPoint(x - i, y, c);
-        drawPoint(x, y + i, c);
-        drawPoint(x, y - i, c);
-    }
-};
+//     for (int32_t i = 1; i < radius; i++)
+//     { // pion/poziom
+//         drawPoint(x + i, y, c);
+//         drawPoint(x - i, y, c);
+//         drawPoint(x, y + i, c);
+//         drawPoint(x, y - i, c);
+//     }
+// };
 
-inline void dsl::ctx::drawLineLeftRight(int32_t x, int32_t y, int32_t l, color c)
-{
-    for (uint32_t i = 0; i < l; i++)
-    {
-        drawPoint(x + i, y, c);
-    }
-}
-
-inline void dsl::ctx::drawLineUpDown(int32_t x, int32_t y, int32_t l, color c)
-{
-    for (uint32_t i = 0; i < l; i++)
-    {
-        drawPoint(x, y + i, c);
-    }
-}
-
-inline void dsl::ctx::fillTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, color c)
+extern "C" void fillTriangle(Surface* ctx,int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, uint32_t c)
 {
 
     if (y1 > y2)
@@ -448,9 +390,9 @@ inline void dsl::ctx::fillTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y
         if (currentY == y2)
             x1tox2S = false;
         if (currentLX < currentSX)
-            drawLineLeftRight(currentLX, currentY, currentSX - currentLX, c);
+            drawLineLeftRight(ctx,currentLX, currentY, currentSX - currentLX, c);
         else
-            drawLineLeftRight(currentSX, currentY, currentLX - currentSX, c);
+            drawLineLeftRight(ctx,currentSX, currentY, currentLX - currentSX, c);
         if (x1tox2S)
             currentSX += x1ToX2;
         else
@@ -459,7 +401,7 @@ inline void dsl::ctx::fillTriangle(int32_t x1, int32_t y1, int32_t x2, int32_t y
     }
 };
 
-inline void dsl::ctx::drawLetter(char ch, int32_t x, int32_t y, color c, int32_t scale)
+void drawLetter(Surface* ctx,char ch, int32_t x, int32_t y, uint32_t c, int32_t scale)
 {
     uint8_t id = (uint8_t)ch - ' ';
 
@@ -471,24 +413,24 @@ inline void dsl::ctx::drawLetter(char ch, int32_t x, int32_t y, color c, int32_t
         for (uint8_t j = 0; j < 8; j++)
         {
             if (chr & p)
-                fillRect(x + j * scale, y + (7 - i) /*nie chcialo mi się obracać każdy znak w tablicy*/ * scale, scale, scale, c);
+                fillRect(ctx,x + j * scale, y + (7 - i) /*nie chcialo mi się obracać każdy znak w tablicy*/ * scale, scale, scale, c);
             p <<= 1;
         }
     }
 };
 
-inline void dsl::ctx::drawCtx(int32_t x, int32_t y, ctx &context, uint8_t scale)
-{
-    for (int32_t ix = 0; ix < context.width; ix++)
-    {
-        for (int32_t iy = 0; iy < context.height; iy++)
-        {
-            fillRect(x + ix * scale, y + iy * scale, scale, scale, context.img[ix + context.width * iy]);
-        }
-    }
-}
+// void drawCtx(int32_t x, int32_t y, ctx &context, uint8_t scale)
+// {
+//     for (int32_t ix = 0; ix < context.width; ix++)
+//     {
+//         for (int32_t iy = 0; iy < context.height; iy++)
+//         {
+//             fillRect(x + ix * scale, y + iy * scale, scale, scale, context.img[ix + context.width * iy]);
+//         }
+//     }
+// }
 
-inline void dsl::ctx::print(const char *text, int32_t x, int32_t y, color c, uint32_t scale)
+extern "C" void print(Surface* ctx,const char *text, int32_t x, int32_t y, uint32_t c, uint32_t scale)
 {
     uint32_t place = 0;
     uint32_t line = 0;
@@ -501,12 +443,12 @@ inline void dsl::ctx::print(const char *text, int32_t x, int32_t y, color c, uin
             continue;
         }
         else
-            drawLetter(text[place], x + 8 * place * scale, y + line * scale * 8, c, scale);
+            drawLetter(ctx,text[place], x + 8 * place * scale, y + line * scale * 8, c, scale);
         place++;
     }
 };
 
-inline void dsl::ctx::print(int32_t number, int32_t x, int32_t y, color c, uint32_t scale)
+extern "C" void printNumber(Surface* ctx,int32_t number, int32_t x, int32_t y, uint32_t c, uint32_t scale)
 {
     bool negative = false;
     if (number < 0)
@@ -537,6 +479,6 @@ inline void dsl::ctx::print(int32_t number, int32_t x, int32_t y, color c, uint3
         number /= 10;
         itnumlenght--;
     }
-    print(txt, x, y, c, scale);
+    print(ctx,txt, x, y, c, scale);
     delete[] txt;
 }
