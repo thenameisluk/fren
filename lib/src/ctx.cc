@@ -197,97 +197,81 @@ extern "C" void drawLine(Surface* ctx,int32_t x1, int32_t y1, int32_t x2, int32_
     uint32_t h = ctx->height;
     uint32_t* fb = ctx->fb;
 
+    std::cout << dx << " " << dy << std::endl;
+
+    if(dx==0&&dy==0){
+        
+        if((uint32_t)x1>=w||(uint32_t)y1>=h)//since it's unsgned, negative values get super hight
+            return;
+        
+        fb[x1 + y1*w] = c;
+        return;
+    }
+
     if (abs(dx) < abs(dy))
     {
+        std::cout << "dy" << std::endl;
         // od ^
         // </* *\>
-        if (x1 > x2)
+        if (dy<0)
         {
             swp(x1, x2);
             swp(y1, y2);
+            dx = x2 - x1;
+            dy = y2 - y1;
+        }
+        
+        if(dy==0){
+            drawLineUpDown(ctx,x1,y1,dy,c);
+            return;
         }
 
-        dx = x2 - x1;
-        dy = y2 - y1;
-        std::cout << "y" << dx << ":" << dy << std::endl;
-        if (dy > 0)
-        {
 
-            for (int32_t i = 0; i < dy; i++)
-            {
-                float p = ((float)i / (float)dy) * (float)dx;
+        for (int32_t i = 0; i < dy; i++){
+            float p = ((float)i / (float)dy) * (float)dx;
 
-                uint32_t x = x1 + p;
-                uint32_t y = y1 + i;
-                //std::cout << "y" << x << ":" << y << std::endl;
+            uint32_t x = x1 + p;
+            uint32_t y = y1 + i;
 
-                if(x>=w||y>=h)//since it's unsgned, negative values get super hight
-                    continue;
-                
-                fb[x + y*w] = c;
-            }
-        }
-        else if(dy < 0){
-            dy = abs(dy);
-            for (int32_t i = 0; i < dy; i++)
-            {
-                float p = ((float)i / (float)dy) * (float)dx;
+            //std::cout << x << ":" << y << std::endl;
 
-                uint32_t x = x1 + p;
-                uint32_t y = y1 - i;
-                //std::cout << "ay" << x << ":" << y << std::endl;
-
-                if(x>=w||y>=h)//since it's unsgned, negative values get super hight
-                    continue;
-                
-                fb[x + y*w] = c;
-            }
-        }else{
-            drawLineUpDown(ctx,x1,x2,dx,c);
+            if(x>=w||y>=h)//since it's unsgned, negative values get super hight
+                continue;
+            
+            fb[x + y*w] = c;
         }
     }
     else
     {
-        if (y1 > y2)
+        std::cout << "dy" << std::endl;
+        // od ^
+        // </* *\>
+        if (dx<0)
         {
             swp(x1, x2);
             swp(y1, y2);
+            dx = x2 - x1;
+            dy = y2 - y1;
         }
-        dx = x2 - x1;
-        dy = y2 - y1;
-        if (dx > 0)
-        {
-            for (int32_t i = 0; i < dx; i++)
-            {
-                float p = ((float)i / (float)dx) * (float)dy;
-                
-                uint32_t x = x1 + i;
-                uint32_t y = y1 + p;
-                //std::cout << "x" << x << ":" << y << std::endl;
-
-                if(x>=w||y>=h)//since it's unsgned, negative values get super hight
-                    continue;
-                
-                fb[x + y*w] = c;
-            }
+        
+        if(dx==0){
+            drawLineLeftRight(ctx,x1,y1,dx,c);
+            return;
         }
-        else
-        {
-            dx = abs(dx);
-            for (int32_t i = 0; i < dx; i++)
-            {
-                float p = ((float)i / (float)dx) * (float)dy;
 
-                uint32_t x = x1 - i;
-                uint32_t y = y1 + p;
-                //std::cout << dx << ":" << dy << ":" << i << std::endl;
-                //std::cout << "ax" << x << ":" << y << std::endl;
 
-                if(x>=w||y>=h)//since it's unsgned, negative values get super hight
-                    continue;
-                
-                fb[x + y*w] = c;
-            }
+        for (int32_t i = 0; i < dx; i++){
+            float p = ((float)i / (float)dx) * (float)dy;
+
+            uint32_t x = x1 + i;
+            uint32_t y = y1 + p;
+
+            //std::cout << x << ":" << y << std::endl;
+
+            if(x>=w||y>=h)//since it's unsgned, negative values get super hight
+                continue;
+            
+            fb[x + y*w] = c;
         }
     }
 };
