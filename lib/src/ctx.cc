@@ -6,7 +6,6 @@
 
 #include "../include/window.hpp"
 
-
 #define swp(a, b)   \
     {               \
         auto t = a; \
@@ -14,11 +13,11 @@
         b = t;      \
     }
 
-#define max(a,b){((a) > (b)) ? (a) : (b)}
-#define min(a,b){((a) < (b)) ? (a) : (b)}
+#define max(a, b) {((a) > (b)) ? (a) : (b)}
+#define min(a, b) {((a) < (b)) ? (a) : (b)}
 
 // ascii
-inline uint64_t characters[] = {
+const inline uint64_t characters[] = {
     // https://github.com/dhepper/font8x8/blob/master/font8x8_basic.h
     0x0000000000000000, // U+0020 (space)
     0x183C3C1818001800, // U+0021 (!)
@@ -120,65 +119,70 @@ inline uint64_t characters[] = {
 
 // ctx
 
-extern "C" void drawLineLeftRight(Surface* ctx,int32_t x, int32_t y, int32_t l, uint32_t c)
+extern "C" void drawLineLeftRight(Surface *ctx, int32_t x, int32_t y, int32_t l, uint32_t c)
 {
-    if(y<0||y>=ctx->height)
+    if (y < 0 || y >= ctx->height)
         return;
 
-    l = min(l,(int32_t)ctx->width-x-1);
+    l = min(l, (int32_t)ctx->width - x - 1);
 
     uint32_t point = x + y * ctx->width;
 
     for (uint32_t i = 0; i < l; i++)
     {
-        
+
         ctx->fb[point] = c;
         point += 1;
     }
 }
 
-extern "C" void drawLineUpDown(Surface* ctx,int32_t x, int32_t y, int32_t l, uint32_t c)
+extern "C" void drawLineUpDown(Surface *ctx, int32_t x, int32_t y, int32_t l, uint32_t c)
 {
-    if(x<0||x>=ctx->width)
+    if (x < 0 || x >= ctx->width)
         return;
 
-    l = min(l,(int32_t)ctx->height-y-1);
+    l = min(l, (int32_t)ctx->height - y - 1);
 
     uint32_t point = x + y * ctx->width;
 
     for (uint32_t i = 0; i < l; i++)
     {
-        
+
         ctx->fb[point] = c;
         point += ctx->width;
     }
 }
 
-extern "C" void fillRect(Surface* ctx,int32_t x, int32_t y, uint32_t w, uint32_t h, uint32_t c)
+extern "C" void fillRect(Surface *ctx, int32_t x, int32_t y, uint32_t w, uint32_t h, uint32_t c)
 {
+
     x = max(0, x);
     y = max(0, y);
-    w = min(ctx->width, w);
-    h = min(ctx->height, h);
 
-    for (int32_t ix = 0; ix < (int32_t)w; ix++)
+    int32_t x2 = x + (int32_t)w;
+    int32_t y2 = y + (int32_t)h;
+
+    x2 = min(x2, (int32_t)ctx->width);
+    y2 = min(y2, (int32_t)ctx->height);
+
+    for (int32_t ix = x; ix < x2; ix++)
     {
-        for (int32_t iy = 0; iy < (int32_t)h; iy++)
+        for (int32_t iy = y; iy < y2; iy++)
         {
-            ctx->fb[(x + ix) + ctx->width * (y + iy)] = c; // to -optimize?
+            ctx->fb[ix + (iy * ctx->width)] = c;
         }
     }
 };
 
-extern "C" void drawRect(Surface* ctx,int32_t x, int32_t y, uint32_t w, uint32_t h, uint32_t c) // to-optimize
+extern "C" void drawRect(Surface *ctx, int32_t x, int32_t y, uint32_t w, uint32_t h, uint32_t c) // to-optimize
 {
-    drawLineUpDown(ctx,x,y,h,c);
-    drawLineUpDown(ctx,x,y + h - 1,h,c);
-    drawLineLeftRight(ctx,x,y,w,c);
-    drawLineLeftRight(ctx,x + w - 1,y,w,c);
+    drawLineUpDown(ctx, x, y, h, c);
+    drawLineUpDown(ctx, x, y + h - 1, h, c);
+    drawLineLeftRight(ctx, x, y, w, c);
+    drawLineLeftRight(ctx, x + w - 1, y, w, c);
 };
 
-extern "C" void fill(Surface* ctx,uint32_t c)
+extern "C" void fill(Surface *ctx, uint32_t c)
 {
     for (uint32_t i = 0; (int32_t)i < (int32_t)ctx->height * (int32_t)ctx->width; i++)
     {
@@ -186,101 +190,100 @@ extern "C" void fill(Surface* ctx,uint32_t c)
     }
 };
 
-//Important
-//to-optimize/fix (cut the lines outside)
-extern "C" void drawLine(Surface* ctx,int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t c)
+// Important
+// to-optimize/fix (cut the lines outside)
+extern "C" void drawLine(Surface *ctx, int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t c)
 {
     int32_t dx = x2 - x1;
     int32_t dy = y2 - y1;
 
     uint32_t w = ctx->width;
     uint32_t h = ctx->height;
-    uint32_t* fb = ctx->fb;
+    uint32_t *fb = ctx->fb;
 
-    std::cout << dx << " " << dy << std::endl;
+    if (dx == 0 && dy == 0)
+    {
 
-    if(dx==0&&dy==0){
-        
-        if((uint32_t)x1>=w||(uint32_t)y1>=h)//since it's unsgned, negative values get super hight
+        if ((uint32_t)x1 >= w || (uint32_t)y1 >= h) // since it's unsgned, negative values get super hight
             return;
-        
-        fb[x1 + y1*w] = c;
+
+        fb[x1 + y1 * w] = c;
         return;
     }
 
     if (abs(dx) < abs(dy))
     {
-        std::cout << "dy" << std::endl;
         // od ^
         // </* *\>
-        if (dy<0)
+        if (dy < 0)
         {
             swp(x1, x2);
             swp(y1, y2);
             dx = x2 - x1;
             dy = y2 - y1;
         }
-        
-        if(dy==0){
-            drawLineUpDown(ctx,x1,y1,dy,c);
+
+        if (dy == 0)
+        {
+            drawLineUpDown(ctx, x1, y1, dy, c);
             return;
         }
 
-
-        for (int32_t i = 0; i < dy; i++){
+        for (int32_t i = 0; i < dy; i++)
+        {
             float p = ((float)i / (float)dy) * (float)dx;
 
             uint32_t x = x1 + p;
             uint32_t y = y1 + i;
 
-            //std::cout << x << ":" << y << std::endl;
+            // std::cout << x << ":" << y << std::endl;
 
-            if(x>=w||y>=h)//since it's unsgned, negative values get super hight
+            if (x >= w || y >= h) // since it's unsgned, negative values get super hight
                 continue;
-            
-            fb[x + y*w] = c;
+
+            fb[x + y * w] = c;
         }
     }
     else
     {
-        std::cout << "dy" << std::endl;
         // od ^
         // </* *\>
-        if (dx<0)
+        if (dx < 0)
         {
             swp(x1, x2);
             swp(y1, y2);
             dx = x2 - x1;
             dy = y2 - y1;
         }
-        
-        if(dx==0){
-            drawLineLeftRight(ctx,x1,y1,dx,c);
+
+        if (dx == 0)
+        {
+            drawLineLeftRight(ctx, x1, y1, dx, c);
             return;
         }
 
-
-        for (int32_t i = 0; i < dx; i++){
+        for (int32_t i = 0; i < dx; i++)
+        {
             float p = ((float)i / (float)dx) * (float)dy;
 
             uint32_t x = x1 + i;
             uint32_t y = y1 + p;
 
-            //std::cout << x << ":" << y << std::endl;
+            // std::cout << x << ":" << y << std::endl;
 
-            if(x>=w||y>=h)//since it's unsgned, negative values get super hight
+            if (x >= w || y >= h) // since it's unsgned, negative values get super hight
                 continue;
-            
-            fb[x + y*w] = c;
+
+            fb[x + y * w] = c;
         }
     }
 };
 
-extern "C" void drawTriangle(Surface* ctx,int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, uint32_t c)
+extern "C" void drawTriangle(Surface *ctx, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, uint32_t c)
 {
-    drawLine(ctx,x1, y1, x2, y2, c);
-    drawLine(ctx,x2, y2, x3, y3, c);
-    drawLine(ctx,x3, y3, x1, y1, c);
+    drawLine(ctx, x1, y1, x2, y2, c);
+    drawLine(ctx, x2, y2, x3, y3, c);
+    drawLine(ctx, x3, y3, x1, y1, c);
 };
 
 // void drawCircle(int32_t x, int32_t y, uint32_t radius, uint32_t c)
@@ -340,7 +343,7 @@ extern "C" void drawTriangle(Surface* ctx,int32_t x1, int32_t y1, int32_t x2, in
 //     }
 // };
 
-extern "C" void fillTriangle(Surface* ctx,int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, uint32_t c)
+extern "C" void fillTriangle(Surface *ctx, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, uint32_t c)
 {
 
     if (y1 > y2)
@@ -374,9 +377,9 @@ extern "C" void fillTriangle(Surface* ctx,int32_t x1, int32_t y1, int32_t x2, in
         if (currentY == y2)
             x1tox2S = false;
         if (currentLX < currentSX)
-            drawLineLeftRight(ctx,currentLX, currentY, currentSX - currentLX, c);
+            drawLineLeftRight(ctx, currentLX, currentY, currentSX - currentLX, c);
         else
-            drawLineLeftRight(ctx,currentSX, currentY, currentLX - currentSX, c);
+            drawLineLeftRight(ctx, currentSX, currentY, currentLX - currentSX, c);
         if (x1tox2S)
             currentSX += x1ToX2;
         else
@@ -385,11 +388,13 @@ extern "C" void fillTriangle(Surface* ctx,int32_t x1, int32_t y1, int32_t x2, in
     }
 };
 
-void drawLetter(Surface* ctx,char ch, int32_t x, int32_t y, uint32_t c, int32_t scale)
+void drawLetter(Surface *ctx, char ch, int32_t x, int32_t y, int32_t scale, uint32_t c)
 {
+
     uint8_t id = (uint8_t)ch - ' ';
 
     uint64_t p = 1;
+
     const uint64_t chr = characters[id];
 
     for (uint8_t i = 0; i < 8; i++)
@@ -397,7 +402,7 @@ void drawLetter(Surface* ctx,char ch, int32_t x, int32_t y, uint32_t c, int32_t 
         for (uint8_t j = 0; j < 8; j++)
         {
             if (chr & p)
-                fillRect(ctx,x + j * scale, y + (7 - i) /*nie chcialo mi się obracać każdy znak w tablicy*/ * scale, scale, scale, c);
+                fillRect(ctx, x + j * scale, y + (7 - i) /*nie chcialo mi się obracać każdy znak w tablicy*/ * scale, scale, scale, c);
             p <<= 1;
         }
     }
@@ -414,25 +419,24 @@ void drawLetter(Surface* ctx,char ch, int32_t x, int32_t y, uint32_t c, int32_t 
 //     }
 // }
 
-extern "C" void print(Surface* ctx,const char *text, int32_t x, int32_t y, uint32_t c, uint32_t scale)
+extern "C" void print(Surface *ctx, const char *text, int32_t x, int32_t y, uint32_t scale, uint32_t c)
 {
     uint32_t place = 0;
     uint32_t line = 0;
-    while (text[place] != '\0')
+    while (text[place] != 0)
     {
-
         if (text[place] == '\n')
         {
             line++;
             continue;
         }
         else
-            drawLetter(ctx,text[place], x + 8 * place * scale, y + line * scale * 8, c, scale);
+            drawLetter(ctx, text[place], x + 8 * place * scale, y + line * scale * 8, scale, c);
         place++;
     }
 };
 
-extern "C" void printNumber(Surface* ctx,int32_t number, int32_t x, int32_t y, uint32_t c, uint32_t scale)
+extern "C" void printNumber(Surface *ctx, int32_t number, int32_t x, int32_t y, uint32_t scale, uint32_t c)
 {
     bool negative = false;
     if (number < 0)
@@ -463,6 +467,6 @@ extern "C" void printNumber(Surface* ctx,int32_t number, int32_t x, int32_t y, u
         number /= 10;
         itnumlenght--;
     }
-    print(ctx,txt, x, y, c, scale);
+    print(ctx, txt, x, y, scale, c);
     delete[] txt;
 }

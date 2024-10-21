@@ -1,6 +1,6 @@
 //test stuff
 
-import { drawLine, fillRect, fillTriangle, getColor } from "./fren/ctx.ts";
+import { drawLine, fillRect, fillTriangle, getColor, print, printNumber } from "./fren/ctx.ts";
 import { drawFrame, eventType, getEvent, getWindow } from "./fren/window.ts";
 
 const window = getWindow(100,100,"hello");
@@ -12,11 +12,14 @@ while(true){
     fillRect(window,0,0,100,100,getColor(255,0,0));
     fillTriangle(window,30,0,50,20,10,50,getColor(0,255,0));
     drawLine(window,50,50,x,y,getColor(0,0,255));
-    //drawLine(window,10,10,x+10,y+10,getColor(0,0,255));
-    //drawLine(window,0,0,100,100,getColor(0,0,255));
-    //drawLine(window,100,100,0,50,getColor(0,0,255));
-    //drawLine(window,0,50,100,50,getColor(0,0,255));
-    //drawLine(window,100,50,0,0,getColor(0,0,255));
+    drawLine(window,0,0,x,y,getColor(0,0,255));
+    drawLine(window,0,0,100,100,getColor(0,0,255));
+    drawLine(window,100,100,0,50,getColor(0,0,255));
+    drawLine(window,0,50,100,50,getColor(0,0,255));
+    drawLine(window,100,50,0,0,getColor(0,0,255));
+
+    //fix infinit loop
+    print(window,"hi",0,0,1,getColor(255,255,255));
 
     
     drawFrame(window);

@@ -8,8 +8,10 @@ but after that i will be able to make games in the hottest
 
 languege ever :3
 
-drawline needs rewrite
-
 currently linux only, windows support is in theory possible
 
 but not a priority
+
+should work on pixel format and surface scaling
+
+the text function gets into infinit loop (needs fix)

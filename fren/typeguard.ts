@@ -11,5 +11,5 @@ export function u32(n:number){
 }
 
 export function cstring(s:string){
-    return new TextEncoder().encode(s)
+    return new TextEncoder().encode(s);
 }
