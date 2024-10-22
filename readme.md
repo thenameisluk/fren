@@ -14,4 +14,6 @@ but not a priority
 
 should work on pixel format
 
+unicode support would be nice but complicated
+
 surface scaling is definietly for the future
