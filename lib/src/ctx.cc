@@ -395,6 +395,9 @@ void drawLetter(Surface *ctx, char ch, int32_t x, int32_t y, int32_t scale, uint
 
     uint64_t p = 1;
 
+    if(id>=96)
+        id = '?'-' ';
+
     const uint64_t chr = characters[id];
 
     for (uint8_t i = 0; i < 8; i++)
@@ -423,7 +426,7 @@ extern "C" void print(Surface *ctx, const char *text, int32_t x, int32_t y, uint
 {
     uint32_t place = 0;
     uint32_t line = 0;
-    while (text[place] != 0)
+    while (text[place] != '\0')
     {
         if (text[place] == '\n')
         {

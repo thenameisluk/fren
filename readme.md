@@ -12,6 +12,6 @@ currently linux only, windows support is in theory possible
 
 but not a priority
 
-should work on pixel format and surface scaling
+should work on pixel format
 
-the text function gets into infinit loop (needs fix)
+surface scaling is definietly for the future

@@ -23,7 +23,6 @@ extern "C" Surface* getWindow(uint32_t width,uint32_t height,const char* name){
     Surface* out = new Surface;
     out->height = height;
     out->width = width;
-    
 
     out->display = XOpenDisplay(nullptr);
 

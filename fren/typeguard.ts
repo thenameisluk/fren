@@ -11,5 +11,9 @@ export function u32(n:number){
 }
 
 export function cstring(s:string){
-    return new TextEncoder().encode(s);
+    const txt = new TextEncoder().encode(s)
+    const buf = new Uint8Array(txt.length+1)
+    buf.set(txt);
+    buf[txt.length]=0;
+    return buf;
 }

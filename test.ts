@@ -1,11 +1,13 @@
 //test stuff
 
-import { drawLine, fillRect, fillTriangle, getColor, print, printNumber } from "./fren/ctx.ts";
-import { drawFrame, eventType, getEvent, getWindow } from "./fren/window.ts";
+import { drawLine, fillRect, fillTriangle, getColor, printNumber } from "./fren/ctx.ts";
+import { drawFrame, eventType, externUwU, getEvent, getWindow } from "./fren/window.ts";
 
 const window = getWindow(100,100,"hello");
 
 let x=0,y=0;
+
+externUwU();
 
 while(true){
     const event = getEvent(window)
@@ -19,7 +21,7 @@ while(true){
     drawLine(window,100,50,0,0,getColor(0,0,255));
 
     //fix infinit loop
-    print(window,"hi",0,0,1,getColor(255,255,255));
+    printNumber(window,-2137,0,0,1,getColor(255,255,255));
 
     
     drawFrame(window);

@@ -1,5 +1,5 @@
 import { libfren } from "./libfren.ts";
-import { cstring, u32 } from "./typeguard.ts";
+import { cstring, u32, u8 } from "./typeguard.ts";
 
 //window creation/event related stuff
 export type Surface = Deno.PointerValue<unknown>;
@@ -27,7 +27,7 @@ export type Event = {
 
 export function externUwU(){libfren.symbols.externUwU()}
 
-export function getWindow(width:number,height:number,name:string){
+export function getWindow(width:number,height:number,name:string=""){
     return libfren.symbols.getWindow(u32(width),u32(height),cstring(name)) as Surface
 }
 
