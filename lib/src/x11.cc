@@ -6,17 +6,20 @@
 
 #include <stdint.h>
 
-#include "../include/window.hpp"
+#include "../include/ctx.hpp"
+struct Surface
+{
+    uint32_t width;
+    uint32_t height;
+    Window window;
+    XImage* image;
+    Display* display;
+    context ctx;
+};
 
 
 extern "C" void externUwU() {
     std::cout << "UwU" << std::endl;
-}
-
-//can be platform dependent
-extern "C" uint32_t getColor(uint8_t r,uint8_t g,uint8_t b){
-
-    return (r<<16) | (g<<8) | b;
 }
 
 extern "C" Surface* getWindow(uint32_t width,uint32_t height,const char* name){
@@ -66,11 +69,17 @@ extern "C" Surface* getWindow(uint32_t width,uint32_t height,const char* name){
     } while (eve.type != MapNotify || eve.xmap.event != out->window);
 
     //graphic context stuff
-    out->fb = new uint32_t[width*height];
+    out->ctx.data = new uint32_t[width*height];
+    out->ctx.width = out->width;
+    out->ctx.height = out->height;
 
-    out->image = XCreateImage(out->display, DefaultVisual(out->display, screen), 24, ZPixmap, 0, (char *)out->fb, width, height, 8, 0);
+    out->image = XCreateImage(out->display, DefaultVisual(out->display, screen), 24, ZPixmap, 0, (char *)out->ctx.data, width, height, 8, 0);
 
     return out;
+}
+
+extern "C" context* getWindowctx(Surface* window){
+        return &(window->ctx);
 }
 
 //after running this command the pointer can't be used anymore
@@ -81,9 +90,9 @@ extern "C" void destroyWindow(Surface* window){
     
     XCloseDisplay(window->display);
 
-    delete [] window->fb;
+    delete [] window->ctx.data;
 
-    window->fb = nullptr;
+    window->ctx.data = nullptr;
 
     delete window;
 }

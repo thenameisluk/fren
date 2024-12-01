@@ -4,7 +4,7 @@
 #include <cmath>
 #include <algorithm>
 
-#include "../include/window.hpp"
+#include "../include/ctx.hpp"
 
 #define swp(a, b)   \
     {               \
@@ -117,9 +117,13 @@ const inline uint64_t characters[] = {
     0x0000000000000000  // U+007F
 };
 
+extern "C" uint32_t getColor(uint8_t r,uint8_t g,uint8_t b){
+    return (r<<16) | (g<<8) | (b);
+}
+
 // ctx
 
-extern "C" void drawLineLeftRight(Surface *ctx, int32_t x, int32_t y, int32_t l, uint32_t c)
+extern "C" void drawLineLeftRight(context *ctx, int32_t x, int32_t y, int32_t l, uint32_t c)
 {
     if (y < 0 || y >= ctx->height)
         return;
@@ -131,12 +135,12 @@ extern "C" void drawLineLeftRight(Surface *ctx, int32_t x, int32_t y, int32_t l,
     for (uint32_t i = 0; i < l; i++)
     {
 
-        ctx->fb[point] = c;
+        ctx->data[point] = c;
         point += 1;
     }
 }
 
-extern "C" void drawLineUpDown(Surface *ctx, int32_t x, int32_t y, int32_t l, uint32_t c)
+extern "C" void drawLineUpDown(context *ctx, int32_t x, int32_t y, int32_t l, uint32_t c)
 {
     if (x < 0 || x >= ctx->width)
         return;
@@ -148,12 +152,12 @@ extern "C" void drawLineUpDown(Surface *ctx, int32_t x, int32_t y, int32_t l, ui
     for (uint32_t i = 0; i < l; i++)
     {
 
-        ctx->fb[point] = c;
+        ctx->data[point] = c;
         point += ctx->width;
     }
 }
 
-extern "C" void fillRect(Surface *ctx, int32_t x, int32_t y, uint32_t w, uint32_t h, uint32_t c)
+extern "C" void fillRect(context *ctx, int32_t x, int32_t y, uint32_t w, uint32_t h, uint32_t c)
 {
 
     x = max(0, x);
@@ -169,12 +173,12 @@ extern "C" void fillRect(Surface *ctx, int32_t x, int32_t y, uint32_t w, uint32_
     {
         for (int32_t iy = y; iy < y2; iy++)
         {
-            ctx->fb[ix + (iy * ctx->width)] = c;
+            ctx->data[ix + (iy * ctx->width)] = c;
         }
     }
 };
 
-extern "C" void drawRect(Surface *ctx, int32_t x, int32_t y, uint32_t w, uint32_t h, uint32_t c) // to-optimize
+extern "C" void drawRect(context *ctx, int32_t x, int32_t y, uint32_t w, uint32_t h, uint32_t c) // to-optimize
 {
     drawLineUpDown(ctx, x, y, h, c);
     drawLineUpDown(ctx, x, y + h - 1, h, c);
@@ -182,24 +186,24 @@ extern "C" void drawRect(Surface *ctx, int32_t x, int32_t y, uint32_t w, uint32_
     drawLineLeftRight(ctx, x + w - 1, y, w, c);
 };
 
-extern "C" void fill(Surface *ctx, uint32_t c)
+extern "C" void fill(context *ctx, uint32_t c)
 {
     for (uint32_t i = 0; (int32_t)i < (int32_t)ctx->height * (int32_t)ctx->width; i++)
     {
-        ctx->fb[i] = c;
+        ctx->data[i] = c;
     }
 };
 
 // Important
 // to-optimize/fix (cut the lines outside)
-extern "C" void drawLine(Surface *ctx, int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t c)
+extern "C" void drawLine(context *ctx, int32_t x1, int32_t y1, int32_t x2, int32_t y2, uint32_t c)
 {
     int32_t dx = x2 - x1;
     int32_t dy = y2 - y1;
 
     uint32_t w = ctx->width;
     uint32_t h = ctx->height;
-    uint32_t *fb = ctx->fb;
+    uint32_t *fb = ctx->data;
 
     if (dx == 0 && dy == 0)
     {
@@ -279,71 +283,144 @@ extern "C" void drawLine(Surface *ctx, int32_t x1, int32_t y1, int32_t x2, int32
     }
 };
 
-extern "C" void drawTriangle(Surface *ctx, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, uint32_t c)
+extern "C" void drawTriangle(context *ctx, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, uint32_t c)
 {
     drawLine(ctx, x1, y1, x2, y2, c);
     drawLine(ctx, x2, y2, x3, y3, c);
     drawLine(ctx, x3, y3, x1, y1, c);
 };
 
-// void drawCircle(int32_t x, int32_t y, uint32_t radius, uint32_t c)
-// {
-//     float len = 0;
-//     for (int32_t i = 0; i < radius; i++)
-//     {
-//         len = sqrt((float(radius) * float(radius)) - (float(i) * float(i)));
-//         mirrorDrawPoint(x, y, i, len, c);
-//         mirrorDrawPoint(x, y, len, i, c);
-//         if (i == len)
-//             return;
-//     }
-// };
+extern "C" void fillCircle(context *ctx,int32_t x, int32_t y, uint32_t radius, uint32_t c)
+{
+    int len = 0;
+    for (int32_t i = 0; i < radius; i++)
+    {
+        len = sqrt((float(radius) * float(radius)) - (float(i) * float(i)));
+        
+        drawLineUpDown(ctx,x+i,y-len,(len*2)+1,c);
+        drawLineUpDown(ctx,x-i,y-len,(len*2)+1,c);
+        drawLineLeftRight(ctx,x-len,y+i,(len*2)+1,c);
+        drawLineLeftRight(ctx,x-len,y-i,(len*2)+1,c);
 
-// void mirrorDrawPoint(int32_t x, int32_t y, uint32_t ox, uint32_t oy, uint32_t c)
-// {
-//     drawPoint(x + ox, y + oy, c);
-//     drawPoint(x + ox, y - oy, c);
-//     drawPoint(x - ox, y - oy, c);
-//     drawPoint(x - ox, y + oy, c);
-// }
+        if (i == len)
+            return;
+    }
+};
 
-// void fillCircle(int32_t x, int32_t y, uint32_t radius, uint32_t c)
-// {
-//     drawPoint(x, y, c);
+extern "C" void fillThickLine(context *ctx,int32_t x1, int32_t y1,int32_t x2, int32_t y2,uint32_t thickness,uint32_t c){
 
-//     float len = 0;
-//     for (int32_t i = 1; i < radius; i++)
-//     {
-//         len = sqrt((float(radius) * float(radius)) - (float(i) * float(i)));
-//         for (int32_t j = 1; j < len; j++)
-//         {
-//             if (i == j)
-//                 break;
+    fillCircle(ctx,x1,y1,thickness,c);
+    fillCircle(ctx,x2,y2,thickness,c);
 
-//             mirrorDrawPoint(x, y, i, j, c);
-//             mirrorDrawPoint(x, y, j, i, c);
-//         }
-//         if (i == len)
-//             break;
-//     }
+    int32_t dx = x2 - x1;
+    int32_t dy = y2 - y1;
 
-//     float skos = sqrt((float(radius) * float(radius)) / 2);
+    uint32_t w = ctx->width;
+    uint32_t h = ctx->height;
+    uint32_t *fb = ctx->data;
 
-//     for (int32_t i = 1; i < skos; i++)
-//     { // skos
-//         mirrorDrawPoint(x, y, i, i, c);
-//     }
+    if (dx == 0 && dy == 0)
+    {
 
-//     for (int32_t i = 1; i < radius; i++)
-//     { // pion/poziom
-//         drawPoint(x + i, y, c);
-//         drawPoint(x - i, y, c);
-//         drawPoint(x, y + i, c);
-//         drawPoint(x, y - i, c);
-//     }
-// };
+        if ((uint32_t)x1 >= w || (uint32_t)y1 >= h) // since it's unsgned, negative values get super hight
+            return;
 
-extern "C" void fillTriangle(Surface *ctx, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, uint32_t c)
+        fb[x1 + y1 * w] = c;
+        return;
+    }
+
+    if (abs(dx) < abs(dy))
+    {
+        // od ^
+        // </* *\>
+        if (dy < 0)
+        {
+            swp(x1, x2);
+            swp(y1, y2);
+            dx = x2 - x1;
+            dy = y2 - y1;
+        }
+
+        if (dx == 0)
+        {
+            fillRect(ctx,x1-thickness,y1,(thickness*2)+1,dy,c);
+            return;
+        }
+
+        for (int32_t i = 0; i < dy; i++)
+        {
+            float p = ((float)i / (float)dy) * (float)dx;
+
+            uint32_t x = x1 + p;
+            uint32_t y = y1 + i;
+            
+            drawLineLeftRight(ctx,x-thickness,y,(thickness*2)+1,c);
+        }
+    }
+    else
+    {
+        // od ^
+        // </* *\>
+        if (dx < 0)
+        {
+            swp(x1, x2);
+            swp(y1, y2);
+            dx = x2 - x1;
+            dy = y2 - y1;
+        }
+
+        if (dy == 0)
+        {
+            fillRect(ctx,x1,y1-thickness,dx,(thickness*2)+1,c);
+            return;
+        }
+
+        for (int32_t i = 0; i < dx; i++)
+        {
+            float p = ((float)i / (float)dx) * (float)dy;
+
+            uint32_t x = x1 + i;
+            uint32_t y = y1 + p;
+            
+            drawLineUpDown(ctx,x,y-thickness,(thickness*2)+1,c);
+        }
+    }
+}
+
+uint32_t getLen(int32_t x1, int32_t y1,int32_t x2, int32_t y2){
+    return sqrt(pow(x1-x2,2)+pow(y1-y2,2));
+}
+
+struct point{
+    float x;
+    float y;
+};
+
+point getStep(float x1, float y1,float x2, float y2,float done){
+    float offx = x1+((x2-x1)*done);
+    float offy = y1+ ((y2-y1)*done);
+    return {offx,offy};
+}
+
+extern "C" void fillThickCurvedLine(context *ctx,int32_t x1, int32_t y1,int32_t x2, int32_t y2,int32_t offx,int32_t offy,uint32_t thickness,uint32_t c){
+    uint32_t steps = getLen(x1,y1,offx,offy)+getLen(x2,y2,offx,offy);
+    //i really don't feel like potimizing this
+    fillCircle(ctx,x1,y1,thickness,c);
+    fillCircle(ctx,x2,y2,thickness,c);
+
+    for(int i = 0;i<steps;i++){
+        float prog = float(i)/float(steps);
+        point p1 = getStep(x1,y1,offx,offy,prog);
+        point p2 = getStep(offx,offy,x2,y2,prog);
+
+        point tgt = getStep(p1.x,p1.y,p2.x,p2.y,prog);
+
+        drawLineLeftRight(ctx,tgt.x-thickness,tgt.y,(thickness*2)+1,c);
+        drawLineUpDown(ctx,tgt.x,tgt.y-thickness,(thickness*2)+1,c);
+    }
+}
+
+extern "C" void fillTriangle(context *ctx, int32_t x1, int32_t y1, int32_t x2, int32_t y2, int32_t x3, int32_t y3, uint32_t c)
 {
 
     if (y1 > y2)
@@ -388,7 +465,7 @@ extern "C" void fillTriangle(Surface *ctx, int32_t x1, int32_t y1, int32_t x2, i
     }
 };
 
-void drawLetter(Surface *ctx, char ch, int32_t x, int32_t y, int32_t scale, uint32_t c)
+void drawLetter(context *ctx, char ch, int32_t x, int32_t y, int32_t scale, uint32_t c)
 {
 
     uint8_t id = (uint8_t)ch - ' ';
@@ -422,7 +499,7 @@ void drawLetter(Surface *ctx, char ch, int32_t x, int32_t y, int32_t scale, uint
 //     }
 // }
 
-extern "C" void print(Surface *ctx, const char *text, int32_t x, int32_t y, uint32_t scale, uint32_t c)
+extern "C" void print(context *ctx, const char *text, int32_t x, int32_t y, uint32_t scale, uint32_t c)
 {
     uint32_t place = 0;
     uint32_t line = 0;
@@ -439,7 +516,7 @@ extern "C" void print(Surface *ctx, const char *text, int32_t x, int32_t y, uint
     }
 };
 
-extern "C" void printNumber(Surface *ctx, int32_t number, int32_t x, int32_t y, uint32_t scale, uint32_t c)
+extern "C" void printNumber(context *ctx, int32_t number, int32_t x, int32_t y, uint32_t scale, uint32_t c)
 {
     bool negative = false;
     if (number < 0)

@@ -1,43 +1,21 @@
 //test stuff
-
-import { drawLine, fillRect, fillTriangle, getColor, printNumber } from "./fren/ctx.ts";
-import { drawFrame, eventType, externUwU, getEvent, getWindow } from "./fren/window.ts";
+import {fill,fillCircle,getColor,fillThickLine,fillThickCurvedLine} from "./fren/ctx.ts"
+import { drawFrame, externUwU, getWindow, getWindowctx } from "./fren/x11.ts";
 
 const window = getWindow(100,100,"hello");
 
-let x=0,y=0;
+const ctx = getWindowctx(window);
 
 externUwU();
 
+
 while(true){
-    const event = getEvent(window)
-    fillRect(window,0,0,100,100,getColor(255,0,0));
-    fillTriangle(window,30,0,50,20,10,50,getColor(0,255,0));
-    drawLine(window,50,50,x,y,getColor(0,0,255));
-    drawLine(window,0,0,x,y,getColor(0,0,255));
-    drawLine(window,0,0,100,100,getColor(0,0,255));
-    drawLine(window,100,100,0,50,getColor(0,0,255));
-    drawLine(window,0,50,100,50,getColor(0,0,255));
-    drawLine(window,100,50,0,0,getColor(0,0,255));
+    fill(ctx,0);
+    fillCircle(ctx,50,50,40,getColor(255,255,255));
+    fillThickLine(ctx,20,20,30,70,3,getColor(255,0,0));
+    fillThickLine(ctx,20,20,70,30,3,getColor(0,255,0));
+    fillThickLine(ctx,30,70,70,30,3,getColor(0,0,255));
+    fillThickCurvedLine(ctx,30,70,70,30,20,20,3,getColor(0,255,255));
 
-    //fix infinit loop
-    printNumber(window,-2137,0,0,1,getColor(255,255,255));
-
-    
     drawFrame(window);
-
-    if(event.type == eventType.MouseMove){
-        x = event.x
-        y = event.y
-    }
-
-    if(event.type == eventType.none)
-        continue;
-
-    console.log(event);
-
-    if(event)
-
-    if(event.type == eventType.close)
-        Deno.exit(0);
 }

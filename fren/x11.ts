@@ -1,5 +1,67 @@
-import { libfren } from "./libfren.ts";
-import { cstring, u32, u8 } from "./typeguard.ts";
+import type { context } from "./ctx.ts";
+import { cstring, u32 } from "./typeguard.ts";
+
+//loading library stuff
+let libName;
+
+switch (Deno.build.os) {
+    case "linux":
+        libName = "./libfren-x11-" + Deno.build.arch + ".so";
+        break;
+    default:
+        console.log("os not supported yet");
+        Deno.exit(-1);
+}
+console.log("loading " + libName);
+
+const libfren = Deno.dlopen(libName, {
+    //debug
+    "externUwU": {
+        parameters: [],
+        result: "void",
+    },
+    //window management
+    "getWindow": {
+        parameters: ["u32", "u32", "buffer"],
+        result: "pointer",
+    },
+    "destroyWindow": {
+        parameters: ["pointer"],
+        result: "void",
+    },
+    "drawFrame": {
+        parameters: ["pointer"],
+        result: "void",
+    },
+    "getWindowctx":{
+        parameters: ["pointer"],
+        result:"pointer"
+    },
+    "getEvent": {
+        parameters: ["pointer"],
+        result: "pointer",
+    },
+    "getEventType": {
+        parameters: ["pointer"],
+        result: "u8",
+    },
+    "getEventKey": {
+        parameters: ["pointer"],
+        result: "u8",
+    },
+    "getEventX": {
+        parameters: ["pointer"],
+        result: "i32",
+    },
+    "getEventY": {
+        parameters: ["pointer"],
+        result: "i32",
+    },
+    "destroyEvent": {
+        parameters: ["pointer"],
+        result: "void",
+    }
+});
 
 //window creation/event related stuff
 export type Surface = Deno.PointerValue<unknown>;
@@ -37,6 +99,10 @@ export function destroyWindow(window:Surface){
 
 export function drawFrame(window:Surface){
     libfren.symbols.drawFrame(window);
+}
+
+export function getWindowctx(window:Surface){
+    return libfren.symbols.getWindowctx(window) as context;
 }
 
 export function getEvent(window:Surface){

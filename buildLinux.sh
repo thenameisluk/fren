@@ -1,3 +1,8 @@
 #!/bin/bash
 
-g++ --share -fPIC lib/src/ctx.cc lib/src/windowLinux.cc -lX11 -o "libfren-$(uname -m).so"
+#linux
+g++ -o2 -o "libctx-$(uname -m).so" --share -fPIC lib/src/ctx.cc
+g++ -o2 -o "libfren-lfb-$(uname -m).so" --share -fPIC lib/src/lfb.cc
+g++ -o2 -o "libfren-x11-$(uname -m).so" --share -fPIC lib/src/x11.cc -lX11 
+#windows
+#will likely not have fb version
