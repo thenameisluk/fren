@@ -1,19 +1,21 @@
 ![fren](./fren.png)
 
-# Simple x11 and linux framebuffer graphics engine ig (wip)
+# Simple x11 and linux framebuffer graphics engine
 
-ctx still needs some adjusting to work with deno's ffi
+create a window
 
-but after that i will be able to make games in the hottest
+![x11](./x11.png)
 
-languege ever :3
+or write directly onto linux framebuffer
 
-currently linux only, windows support is in theory possible
+![fb](./fb.jpg)
 
-but not a priority
+currently linux only, windows support is theory (not a priority)
 
-should work on pixel format
+you need to build lib on your platform first (look buildlinux.sh)
 
 unicode support would be nice but complicated (not a priority)
 
-surface scaling is definietly for the future
+this is mainly for me by me but since i feel like sharing here you go
+
+have fun with it
