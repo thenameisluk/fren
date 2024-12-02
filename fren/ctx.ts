@@ -14,6 +14,14 @@ switch (Deno.build.os) {
 
 console.log("loading " + libName);
 const libctx = Deno.dlopen(libName, {
+    "getWidth":{
+        parameters:["pointer"],
+        result:"u32"
+    },
+    "getHeight":{
+        parameters:["pointer"],
+        result:"u32"
+    },
     "getColor": {
         parameters: ["u8", "u8", "u8"],
         result: "u32",
@@ -95,6 +103,12 @@ export type context = Deno.PointerValue<number>;
 export type Color = number
 
 //drawing related stuff
+export function getWidth(ctx:context){
+    return libctx.symbols.getWidth(ctx);
+}
+export function getHeight(ctx:context){
+    return libctx.symbols.getHeight(ctx);
+}
 export function getColor(r:number,g:number,b:number){
     return libctx.symbols.getColor(u8(r),u8(g),u8(b)) as Color;
 }

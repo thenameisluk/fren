@@ -6,7 +6,7 @@ let libName;
 
 switch (Deno.build.os) {
     case "linux":
-        libName = "./libfren-fbl-" + Deno.build.arch + ".so";
+        libName = "./libfren-lfb-" + Deno.build.arch + ".so";
         break;
     default:
         console.log("os not supported yet");

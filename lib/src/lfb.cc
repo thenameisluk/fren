@@ -17,7 +17,7 @@ struct linuxFB{
     uint32_t width;
     uint32_t height;
     uint32_t *buffer;
-    context ctx;
+    context *ctx;
     uint32_t fblen;
 };
 
@@ -25,13 +25,13 @@ extern "C" void externUwU(){
     printf("C++ uwu");
 }
 
-extern "C" void drawFBFrame(linuxFB* s,context* ctx){
+extern "C" void drawFBFrame(linuxFB* s){
     if(!s->rotated){
-        memcpy(s->buffer, ctx->data, s->fblen);
+        memcpy(s->buffer, s->ctx->data, s->fblen);
         return;
     }
 
-    if(ctx->height!=s->height||ctx->width!=s->width){
+    if(s->ctx->height!=s->height||s->ctx->width!=s->width){
         printf("bad ctx passed");
         throw "fk";
     }
@@ -42,7 +42,7 @@ extern "C" void drawFBFrame(linuxFB* s,context* ctx){
             // Correct mapping for 90° rotation
             uint32_t src_pos = x + y * s->width;
             uint32_t dst_pos = y + (s->width - 1 - x) * s->height; //so inefficient but i don't feel like optimizing
-            s->buffer[dst_pos] = ctx->data[src_pos];
+            s->buffer[dst_pos] = s->ctx->data[src_pos];
         }
     }
 }
@@ -85,9 +85,10 @@ extern "C" linuxFB* getFB(){
     // Map the device to memory
     s->buffer = (uint32_t*)mmap(0, s->fblen, PROT_READ | PROT_WRITE, MAP_SHARED,s->fbfd, 0);
 
-    s->ctx.data = new uint32_t[s->width*s->height];
-    s->ctx.width = s->width;
-    s->ctx.height = s->height;
+    s->ctx = new context;
+    s->ctx->data = new uint32_t[s->width*s->height];
+    s->ctx->width = s->width;
+    s->ctx->height = s->height;
 
     if (vinfo.bits_per_pixel != 32)
     {
@@ -99,7 +100,7 @@ extern "C" linuxFB* getFB(){
 }
 
 extern "C" context* getFBctx(linuxFB* s){
-    return &(s->ctx);
+    return s->ctx;
 }
 
 extern "C" void destroyFB(linuxFB* s){

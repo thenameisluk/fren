@@ -117,6 +117,14 @@ const inline uint64_t characters[] = {
     0x0000000000000000  // U+007F
 };
 
+extern "C" uint32_t getWidth(context* ctx){
+    return ctx->width;
+}
+
+extern "C" uint32_t getHeight(context* ctx){
+    return ctx->height;
+}
+
 extern "C" uint32_t getColor(uint8_t r,uint8_t g,uint8_t b){
     return (r<<16) | (g<<8) | (b);
 }
@@ -503,16 +511,18 @@ extern "C" void print(context *ctx, const char *text, int32_t x, int32_t y, uint
 {
     uint32_t place = 0;
     uint32_t line = 0;
+    uint32_t off = 0;
     while (text[place] != '\0')
     {
         if (text[place] == '\n')
         {
             line++;
-            continue;
+            off = 0;
         }
         else
-            drawLetter(ctx, text[place], x + 8 * place * scale, y + line * scale * 8, scale, c);
+            drawLetter(ctx, text[place], x + 8 * off * scale, y + line * scale * 8, scale, c);
         place++;
+        off++;
     }
 };
 
