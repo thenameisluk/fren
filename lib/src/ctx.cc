@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "../include/ctx.hpp"
+#include "../include/pureByte.hpp"
 
 #define swp(a, b)   \
     {               \
@@ -165,7 +166,7 @@ extern "C" void drawLineUpDown(context *ctx, int32_t x, int32_t y, int32_t l, ui
     }
 }
 
-extern "C" void fillRect(context *ctx, int32_t x, int32_t y, uint32_t w, uint32_t h, uint32_t c)
+extern "C" void fillRect(context *ctx, int32_t x, int32_t y, int32_t w, int32_t h, uint32_t c)
 {
 
     x = max(0, x);
@@ -492,6 +493,21 @@ void drawLetter(context *ctx, char ch, int32_t x, int32_t y, int32_t scale, uint
             if (chr & p)
                 fillRect(ctx, x + j * scale, y + (7 - i) /*nie chcialo mi się obracać każdy znak w tablicy*/ * scale, scale, scale, c);
             p <<= 1;
+        }
+    }
+};
+
+void drawSymbol(context *ctx, symbol* s, int32_t x, int32_t y, int32_t scale, uint32_t c)
+{
+    
+    PbView view(s->data);
+
+    for (uint8_t i = 0; i < s->height; i++)
+    {
+        for (uint8_t j = 0; j < s->width; j++)
+        {
+            if (view.readBit())
+                fillRect(ctx, x + j * scale, y + i * scale, scale, scale, c);
         }
     }
 };

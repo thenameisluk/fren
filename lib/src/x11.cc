@@ -7,15 +7,7 @@
 #include <stdint.h>
 
 #include "../include/ctx.hpp"
-struct Surface
-{
-    uint32_t width;
-    uint32_t height;
-    Window window;
-    XImage* image;
-    Display* display;
-    context ctx;
-};
+#include "../include/x11.hpp"
 
 
 extern "C" void externUwU() {
@@ -105,31 +97,6 @@ extern "C" void drawFrame(Surface* window){
 
     XFreeGC(window->display, gc);
 }
-
-enum eventType: uint8_t{
-    none = 0,
-    MouseDown = 1,
-    MouseUp = 2,
-    MouseMove = 3,
-    KeyDown = 4,
-    KeyUp = 5,
-    close = 6
-};
-
-struct eventPos{
-    int32_t x;
-    int32_t y;
-};
-union eventDate{
-    char key;
-    eventPos pos;
-};
-
-struct Event
-{
-    eventType type;
-    eventDate data;
-};
 
 Event nextEvent(Surface* window){
 

@@ -6,6 +6,7 @@
 #include <algorithm>
 
 #include "../include/ctx.hpp"
+#include "../include/pureByte.hpp"
 
 #define swp(a, b)   \
     {               \
@@ -513,6 +514,21 @@ void drawLetter(context *ctx, char ch, int32_t x, int32_t y, int32_t scale, uint
             if (chr & p)
                 fillRect(ctx, x + (j)*scale, y + (7 - i) * scale, scale, scale, c);
             p <<= 1;
+        }
+    }
+};
+
+void drawSymbol(context *ctx, symbol* s, int32_t x, int32_t y, int32_t scale, uint32_t c)
+{
+    
+    PbView view(s->data);
+
+    for (uint8_t i = 0; i < s->height; i++)
+    {
+        for (uint8_t j = 0; j < s->width; j++)
+        {
+            if (view.readBit())
+                fillRect(ctx, x + j * scale, y + i * scale, scale, scale, c);
         }
     }
 };
